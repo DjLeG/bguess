@@ -532,6 +532,7 @@ proc bgcan {nick} {
 			if {$bguess(last_winner) == $nick} {
 				# El ultimo ganador repite acierto
 				incr bguess(in_a_row)
+				puthelp "PRIVMSG $chan :antes del if"
 				if {$bguess(in_a_row) >= $bgrow_can} {
 					# Bote para el ganador
 					puthelp "PRIVMSG $chan :\001ACTION $m-> $b$n$nick$b $m-Te llevas el bote de $bguess(can) puntos.\001"
@@ -540,8 +541,10 @@ proc bgcan {nick} {
 					set bguess(can) 0
 				} elseif {$bguess(in_a_row) == [expr {$bgrow_can - 1}]} {
 					# Un acierto mas y nick se lleva el bote
+					puthelp "PRIVMSG $chan :poniendo el mensaje"
 					puthelp "PRIVMSG $chan :\001ACTION $m-> $b$n$nick$b $m- Un acierto mas y el bote de $bguess(can) es tuyo.\001"
 				}
+				puthelp "PRIVMSG $chan :saliendo del if"
 			} else {
 				set bguess(in_a_row) 1
 			}
