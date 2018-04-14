@@ -51,7 +51,7 @@ set bghigh_num 99
 # Esta permitido jugar cuando solo quede un numero ?
 # 		true = si	-	false = no
 #-------------------------------------------------------------------------------
-set bgduck_granted true
+set bgduck_granted false
 
 #-------------------------------------------------------------------------------
 # Si no se permite jugar al ultimo número, se guarga el punto en el bote ?
@@ -62,7 +62,7 @@ set bgcan_on true
 #-------------------------------------------------------------------------------
 # Número de aciertos consecutivos para llevarse el bote
 #-------------------------------------------------------------------------------
-set bgrow_can 5
+set bgrow_can 3
 
 #-------------------------------------------------------------------------------
 # Tiempo entre intentos (en segundos)
@@ -134,11 +134,11 @@ set gc	"\00315";	# Gris Claro
 # Binds
 #--------------------------------------------------------------------------------
 
-bind pubm - "$bguess(chan) $bguess(cmdplay)*" bguess_play
-bind pubm - "$bguess(chan) $bguess(cmdrange)" bguess_range
+#bind pubm - "$bguess(chan) $bguess(cmdplay)*" bguess_play
+# bind pubm - "$bguess(chan) $bguess(cmdrange)" bguess_range
 #bind pubm - "$bguess(chan) $bguess(cmdweb)" bguess_web
-bind pubm - "$bguess(chan) $bguess(cmdstats)*" bguess_stats
-bind time - "00 01 *" bguess_cleaning
+# bind pubm - "$bguess(chan) $bguess(cmdstats)*" bguess_stats
+# bind time - "00 01 *" bguess_cleaning
 
 #--------------------------------------------------------------------------------
 # Procedures
@@ -486,14 +486,16 @@ proc bguess_web {nick uhost hand chan text} {
 #--------------------------------------------------------------------------------
 # Inicia el siguiente juego
 #--------------------------------------------------------------------------------
-proc bgnext {nick} {
+proc bgnext {nick {win false}} {
 	global bguess bglow_num bghigh_num
 	incr bguess(game) 1
 	set bguess(target)  [rand_2 $bglow_num $bghigh_num]
 	set bguess(intentos) 0
 	set bguess(low) $bglow_num
-	set bguess(high) $bghigh_hum
-	set bguess(last_winner) $nick
+	set bguess(high) $bghigh_num
+	if {$win} {
+		set bguess(last_winner) $nick
+	}
 }
 
 #--------------------------------------------------------------------------------
@@ -525,26 +527,24 @@ proc check_duck {chan nick bghi bglo} {
 #--------------------------------------------------------------------------------
 # Manejo del bote
 #--------------------------------------------------------------------------------
-proc bgcan {nick} {
+proc bgcan {chan nick} {
 	global bgcan_on bgduck_granted bgrow_can bguess
-	if {!$bgduck_granted && $bgcan_on} {
-		if {$bguess(can) > 0} {
-			if {$bguess(last_winner) == $nick} {
+	global b n m
+	if {!$bgduck_granted} {
+		if {$bgcan_on && $bguess(can) > 0} {
+			if {[string equal -nocase $bguess(last_winner) $nick]} {
 				# El ultimo ganador repite acierto
 				incr bguess(in_a_row)
-				puthelp "PRIVMSG $chan :antes del if"
 				if {$bguess(in_a_row) >= $bgrow_can} {
 					# Bote para el ganador
 					puthelp "PRIVMSG $chan :\001ACTION $m-> $b$n$nick$b $m-Te llevas el bote de $bguess(can) puntos.\001"
 					player_stats_update $nick 0 0 $bguess(can)
 					set bguess(in_a_row) 0
 					set bguess(can) 0
-				} elseif {$bguess(in_a_row) == [expr {$bgrow_can - 1}]} {
+				} elseif {$bguess(in_a_row) == [expr $bgrow_can - 1]} {
 					# Un acierto mas y nick se lleva el bote
-					puthelp "PRIVMSG $chan :poniendo el mensaje"
-					puthelp "PRIVMSG $chan :\001ACTION $m-> $b$n$nick$b $m- Un acierto mas y el bote de $bguess(can) es tuyo.\001"
+					puthelp "PRIVMSG $chan :\001ACTION $m-> $b$n$nick$b $m- Un acierto mas y el bote de $bguess(can) puntos es tuyo.\001"
 				}
-				puthelp "PRIVMSG $chan :saliendo del if"
 			} else {
 				set bguess(in_a_row) 1
 			}
@@ -617,8 +617,8 @@ proc bguess_play {nick uhost hand chan text} {
 				set bguess(max_one_game) $bguess(game)
 				set bguess(max_one_time) [unixtime]
 			}
-			bgnext $nick
-			bgcan $nick
+			bgcan $chan $nick
+			bgnext $nick true
 		} else {
 			if {$text > $bguess(target)} {
 				# El intento fue demasiado alto.
