@@ -715,7 +715,7 @@ proc bguess_play {nick uhost hand chan text} {
 				intentos en juego Nº [bold $bguess(game)] - [bold $puntos] puntos obtenidos).\
 				Llevas un total de [bold [expr {[bgpuntos $nick] + $puntos}]] ganados.\
 				¿Puedes acertar el siguiente a la primera? :P"
-			if {[isvoice $nick $chan]} {
+			if {[isop $nick $chan] || [ishalfop $nick $chan] || [isvoice $nick $chan]} {
 				putact $chan "$mensaje"
 			} else {
 				putact $chan "$mensaje - [blue "Tómate una rubia!!" -nc]"
